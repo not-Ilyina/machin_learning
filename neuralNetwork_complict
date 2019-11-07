@@ -1,0 +1,151 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Nov  7 19:27:32 2019
+
+@author: wufeng
+"""
+import numpy as np
+import matplotlib.pyplot 
+import scipy.special
+
+class neuralNetwork:
+    
+    #initialise the neural network
+    def __init__(
+            self,inputnodes,hiddennodes,outputnodes,
+            learningrate):
+        #set number of nodes in each input,hidden,output layer
+        
+        self.inodes = inputnodes
+        self.hnodes = hiddennodes
+        self.onodes = outputnodes
+        
+        #learning rate
+        self.lr = learningrate
+        #link weight matrices, wih and who 
+        #weigth inside the arrays are w_i_j, where link is from node
+        #i to node j in the next layer  w11 w21 etc
+        #实现神经网络的心脏——链接权重矩阵
+        self.wih = np.random.rand(self.hnodes,self.hnodes) - 0.5
+        self.who = np.random.rand(self.onodes,self.hnodes) - 0.5
+        # activation function is the sigmoid function
+        self.activation_function = lambda x: scipy.special.expit(x)
+        
+
+    #train the neural network
+    #
+    def train(self,inputs_list,targets_list):
+        #把输入列表转换成二维矩阵
+        inputs = np.array(inputs_list,ndmin=2).T
+        targets = np.array(targets_list,ndmin=2).T
+        #计算隐藏层的输入和
+        hidden_inputs = np.dot(self.wih,inputs)
+        #计算隐藏层的信号激活输出
+        hidden_outputs = self.activation_function(hidden_inputs)
+        
+        #计算输出层的输入和
+        final_inputs = np.dot(self.who,hidden_outputs)
+        #计算输出层的信号激活输出
+        final_outputs = self.activation_function(final_inputs)
+        
+        #error is the (target - actual)
+        output_errors = targets - final_outputs
+        
+        #hidden layer error is the output_errors,split by weights,recombined at hidden nodes
+        hidden_errors = np.dot(self.who.T,output_errors)
+        
+        #update the weigths for the links between the hidden and output layers
+        self.who += self.lr * np.dot((output_errors * 
+final_outputs * (1.0 - final_outputs)),np.transpose(hidden_outputs))
+        
+        self.wih += self.lr * np.dot((hidden_errors * 
+hidden_outputs * (1.0 - hidden_outputs)),np.transpose(inputs))
+        
+        pass
+    #query the neural network
+    #接受神经网络的输入，返回网络的输出
+    def query(self,inputs_list):
+        
+        #把输入列表转换为二维矩阵,并转置
+        inputs = np.array(inputs_list,ndmin=2).T #这里有些许疑问？只需传入一个参数——inputs_list
+        #计算隐藏层的输入和
+        hidden_inputs = np.dot(self.wih,inputs)
+        #计算隐藏层的信号激活输出
+        hidden_outputs = self.activation_function(hidden_inputs)
+        
+        #计算输出层的输入和
+        final_inputs = np.dot(self.who,hidden_outputs)
+        #计算输出层的信号激活输出
+        final_outputs = self.activation_function(final_inputs)
+        return final_outputs
+# number of input, hidden and output nodes
+input_nodes = 784
+hidden_nodes = 784
+output_nodes = 10
+
+#learning rate is 0.3
+learning_rate = 0.4
+
+#create instance of neural network
+
+n = neuralNetwork(input_nodes,hidden_nodes,output_nodes,
+                  learning_rate)
+
+# load the mnist training date CSV file into a list
+
+training_data_file = open('mnist_train_100.csv','r')
+training_data_list = training_data_file.readlines()
+training_data_file.close
+# print(len(data_list))
+# train the neural network
+# go through all records in the training set
+# train the neural network
+
+# epochs is the number of times the training data set is used for training
+epochs = 3
+
+for e in range(epochs):
+    for record in training_data_list:
+        # split the record by the ',' commas
+        all_values = record.split(',')
+        # scale and shift the inputs
+        inputs = (np.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01
+        # create the target output values (all 0.01,expet the desired label which is 0,99)
+        targets = np.zeros(output_nodes) + 0.01
+        # all_values[0] is the target label for this record
+        targets[int(all_values[0])] = 0.99#
+        n.train(inputs,targets)
+        pass
+
+# load the mnist test data CSV file into a list
+test_data_file = open('mnist_test_10.csv','r')
+test_data_list = test_data_file.readlines()
+test_data_file.close()
+
+# test the neural network
+scorecard = []
+# go through all records in test data set
+for record in test_data_list:
+    # split the record by ',' commas
+    all_values = record.split(',')
+    # correct answer is first value
+    correct_label = int(all_values[0])
+    print(correct_label,'correct_label')
+    # scale and shift the inputs
+    inputs = (np.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01
+    # query the network
+    outputs = n.query(inputs)
+    # the index of the highest value correspond to the label
+    label = np.argmax(outputs)
+    print(label,"network's answer is")
+    print("-----------------------------")
+    # append correct or incorrect to list
+    if (label == correct_label):
+        scorecard.append(1)
+    else:
+        scorecard.append(0)
+        pass
+    pass
+print(scorecard)
+scorecard_array = np.asarray(scorecard)
+print("performance = ",scorecard_array.sum() / scorecard_array.size)
