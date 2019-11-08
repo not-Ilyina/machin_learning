@@ -26,7 +26,7 @@ class neuralNetwork:
         #weigth inside the arrays are w_i_j, where link is from node
         #i to node j in the next layer  w11 w21 etc
         #实现神经网络的心脏——链接权重矩阵
-        self.wih = np.random.rand(self.hnodes,self.hnodes) - 0.5
+        self.wih = np.random.rand(self.hnodes,self.inodes) - 0.5
         self.who = np.random.rand(self.onodes,self.hnodes) - 0.5
         # activation function is the sigmoid function
         self.activation_function = lambda x: scipy.special.expit(x)
