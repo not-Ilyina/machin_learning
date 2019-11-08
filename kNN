@@ -1,0 +1,73 @@
+import numpy as np
+import operator
+import matplotlib.pyplot as plt
+
+
+def createDataSet():
+    group = np.array([[1.0,1.1],
+                  [1.0,1.0],
+                  [0,0],
+                  [0,0.1]])
+    labels = ["A","A","B","B"]
+    return group, labels
+group, labels = createDataSet()
+#--------------画图---------------------------------
+x_val = []
+y_val = []
+for i in range(4):
+    x_val.append(group[i][0])
+    y_val.append(group[i][1])
+plt.scatter(x_val[:2],y_val[:2],label = "A")
+plt.scatter(x_val[2:],y_val[2:],label = "B")
+plt.scatter(0.5,0.7,label = "C")
+plt.title("Four data",fontsize=24)
+plt.xlabel("x_values",fontsize=14)
+plt.ylabel("y_values",fontsize=14)
+plt.legend()
+plt.show()
+
+
+def classify0(inX, dataSet, labels, k):
+    dataSetSize = dataSet.shape[0]
+    diffMat = inX - dataSet
+    sqDiffMat = diffMat ** 2
+    sqDistance = sqDiffMat.sum(axis=1) # axis=1为对行求和
+    distances = sqDistance ** 0.5
+    sortedDistances = distances.argsort() # 获取排序后原始下角标
+    index = sortedDistances[:k] # 获取距离最小的前k个下角标
+    classCount = {} # 字典
+    for i in index:
+        templabel = labels[i]
+        classCount[templabel] = classCount.get(templabel,0) + 1 # #获取类别及其次数的字典 get(t,0)如果没有返回0
+    sortedCount = sorted(classCount.items(),key=operator.itemgetter(1),reverse=True) # 定义函数key，获取对象的第1个域(从0开始)的值
+    # key=lambda item:item[1]    #字典的值按降序排
+    return sortedCount[0][0]
+
+
+#--------------------------------------------------------------------------------------------------  
+以classCount.get(voteIlabel,0)为例： 
+classCount.get(voteIlabel,0)返回字典classCount中voteIlabel元素对应的值,若无，则进行初始化
+
+    若不存在voteIlabel，则字典classCount中生成voteIlabel元素，并使其对应的数字为0，即 
+    classCount = {voteIlabel：0} 
+    此时classCount.get(voteIlabel,0)作用是检测并生成新元素，括号中的0只用作初始化，之后再无作用
+
+    当字典中有voteIlabel元素时，classCount.get(voteIlabel,0)作用是返回该元素对应的值，即0
+
+以书中代码为例： 
+classCount[voteIlabel] = classCount.get(voteIlabel,0) + 1；
+
+    初始化classCount = {}时，此时输入classCount，输出为： 
+
+        classCount = {}
+
+    当第一次遇到新的label时，将新的label添加到字典classCount，并初始化其对应数值为0 
+    然后+1，即该label已经出现过一次，此时输入classCount，输出为：
+
+        classCount = {voteIlabel：1}
+
+    当第二次遇到同一个label时，classCount.get(voteIlabel,0)返回对应的数值（此时括号内的0不起作用，因为已经初始化过了），然后+1，此时输入classCount，输出为：
+
+        classCount = {voteIlabel：2}
+
+可以看出，+1是每一次都会起作用的,因为不管遇到字典内已经存在的或者不存在的，都需要把这个元素记录下来
